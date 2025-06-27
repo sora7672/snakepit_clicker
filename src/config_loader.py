@@ -113,17 +113,29 @@ class ConfigHolder:
             self.__save_settings()
             return
 
-        # TODO: is this a tuple of strings?
+        if not all(["_start_key_combo" in tmp_config, "_stop_key_combo" in tmp_config,
+                   "_exit_key_combo" in tmp_config,"_interval_clicks" in tmp_config]):
+            warn(f"""
+            The file {self._file_path} has not all needed keys. 
+            Needed keys:
+            '_start_key_combo', '_stop_key_combo', '_exit_key_combo', '_interval_clicks'
+            Using default settings.
+            """)
+            self.__save_settings()
+            return
+
+        if not isinstance(tmp_config["_interval_clicks"], int):
+            raise TypeError("The interval clicks needs to be an integer.")
+        if tmp_config["_interval_clicks"] <= 5:
+            raise ValueError("The interval clicks needs to be a integer higher than 5.")
+
 
         with self._lock:
             self._start_key_combo = self.__validate_keys(tmp_config["_start_key_combo"])
             self._stop_key_combo = self.__validate_keys(tmp_config["_stop_key_combo"])
             self._exit_key_combo = self.__validate_keys(tmp_config["_exit_key_combo"])
 
-            if not isinstance(tmp_config["_interval_clicks"], int):
-                raise TypeError("The interval clicks needs to be an integer.")
-            if tmp_config["_interval_clicks"] <=5:
-                raise ValueError("The interval clicks needs to be a integer higher than 5.")
+
             self._interval_clicks = tmp_config["_interval_clicks"]
 
     def __validate_keys(self, key_tuple) -> set:
@@ -161,6 +173,7 @@ class ConfigHolder:
             tmp_config["_start_key_combo"] = self._start_key_combo
             tmp_config["_stop_key_combo"] = self._stop_key_combo
             tmp_config["_exit_key_combo"] = self._exit_key_combo
+            tmp_config["_interval_clicks"] = self._interval_clicks
 
         with open(self._file_path, 'w') as file:
             file.write(json.dumps(tmp_config, indent=4))
